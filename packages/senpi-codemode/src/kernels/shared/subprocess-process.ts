@@ -68,6 +68,13 @@ export class SubprocessProcess {
 		this.errorListener = (error) => {
 			if (this.errorReported) return;
 			this.errorReported = true;
+			// senpi#3500: a child whose spawn failed (ENOENT) has no pid and emits no "exit", so there is nothing to
+			// terminate; without this retirement waits for an exit that cannot come and reports a SIGKILL failure.
+			const spawnFailed = (error as NodeJS.ErrnoException).syscall?.startsWith("spawn") === true;
+			if (spawnFailed && child.pid === undefined && !this.exited) {
+				this.exited = true;
+				this.exit.resolve();
+			}
 			this.handlers.onError(this, error);
 		};
 		this.stdoutReader.on("line", (line) => {

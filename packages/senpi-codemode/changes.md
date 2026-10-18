@@ -1,5 +1,25 @@
 # senpi-codemode fork changes
 
+## 2026-10-18 - Report a failed interpreter spawn as itself (Refs senpi#3500)
+
+### What changed
+
+- `packages/senpi-codemode/src/kernels/shared/subprocess-process.ts`: a child with no pid when it emits `error` never spawned (ENOENT), so the process is marked exited at that point and retirement no longer waits for an `exit` event that cannot come.
+- `packages/senpi-codemode/test/subprocess-spawn-failure.test.ts`: a missing interpreter binary fails the run with the spawn error and `close()` resolves.
+- `packages/senpi-codemode/test/kernels/jl/lazy-handles.test.ts`: skipped when `julia` is not on `PATH`, like its siblings.
+
+### Why
+
+- Retiring a kernel whose spawn failed reported `KernelRetirementError` ("did not exit after SIGKILL") on `close()`, hiding the real spawn failure.
+
+### Why an extension could not handle it
+
+- The subprocess lifecycle is internal to the codemode kernel runtime.
+
+### Expected merge conflict zones
+
+- `SubprocessProcess`'s error listener.
+
 ## 2026-10-15 - Write Julia startup frames pre-encoded (Fixes senpi#3048)
 
 ### What changed
